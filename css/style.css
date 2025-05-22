@@ -1,0 +1,14 @@
+/* Basic styling for clfmweb */
+
+body {
+    font-family: Arial, sans-serif;
+}
+
+h1, h2, h3, h4, h5, h6 {
+    color: #333; /* Dark grey for headings */
+}
+
+/* Define a primary color (placeholder) */
+:root {
+    --primary-color: #007bff; /* Example: Bootstrap primary blue */
+}
