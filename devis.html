@@ -1,0 +1,757 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Générateur de Devis - clfmweb</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+    <style>
+        /* Réinitialisation de base et polices */
+        body, html {
+            margin: 0;
+            padding: 0;
+            font-family: 'Roboto', sans-serif;
+            background-color: #1a1a1a;
+            color: #f4f4f4;
+            line-height: 1.6;
+            font-size: 16px;
+            overflow-x: hidden;
+        }
+
+        .container {
+            width: 90%;
+            max-width: 1100px;
+            margin: auto;
+            overflow: visible; 
+            padding: 0 20px;
+        }
+
+        /* Header et Navigation */
+        header {
+            background: #111;
+            padding: 1rem 0;
+            border-bottom: 3px solid #E63946; 
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .navbar .container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 1.8rem;
+            font-weight: bold;
+            text-decoration: none;
+            text-transform: uppercase;
+        }
+
+        /* Animation flottante pour les boutons */
+        @keyframes floating-animation {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-5px); } 
+            100% { transform: translateY(0px); }
+        }
+
+        /* Classe pour le dégradé de texte RGB */
+        .text-rgb-gradient {
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-fill-color: transparent;
+            animation: text-gradient-animation 5s linear infinite alternate; 
+            display: inline-block; 
+            background-image: linear-gradient(90deg, #1a1a1a 0%, #007bff 50%, #E63946 100%);
+        }
+       
+        h1.text-rgb-gradient, h2.text-rgb-gradient, h3.text-rgb-gradient, legend.text-rgb-gradient, a.text-rgb-gradient {
+             display: block; 
+        }
+         a.logo.text-rgb-gradient { 
+            display: inline-block;
+            animation: text-gradient-animation 5s linear infinite alternate;
+        }
+
+
+        @keyframes text-gradient-animation { 
+            0% { background-position: 0% 50%; }
+            100% { background-position: 100% 50%; }
+        }
+
+        .nav-links { list-style: none; display: flex; padding: 0; margin: 0; }
+        .nav-links li { margin-left: 25px; }
+        .nav-links a { color: #f4f4f4; text-decoration: none; font-weight: bold; padding: 5px 10px; border-radius: 5px; transition: background-color 0.3s ease, color 0.3s ease, transform 0.2s ease; }
+        .nav-links a:hover, .nav-links a.active { background-color: #E63946; color: #1a1a1a; transform: translateY(-2px); }
+        .nav-links a:active { transform: translateY(0px); }
+        .dropdown { position: relative; }
+        .dropdown-content { display: none; position: absolute; background-color: #2c2c2c; min-width: 200px; box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.3); z-index: 1; border-radius: 5px; padding: 10px 0; opacity: 0; transform: translateY(10px); transition: opacity 0.3s ease, transform 0.3s ease; }
+        .dropdown:hover .dropdown-content { display: block; opacity: 1; transform: translateY(0); }
+        .dropdown-content a { color: #f4f4f4; padding: 12px 16px; text-decoration: none; display: block; font-weight: normal; }
+        .dropdown-content a:hover { background-color: #E63946; color: #1a1a1a; transform: translateX(3px); }
+        .dropdown-content a:active { background-color: #c32a39; transform: translateX(1px); }
+        .nav-links .dropbtn { cursor: pointer; }
+        .mobile-menu-toggle { display: none; background: none; border: none; color: #f4f4f4; font-size: 2rem; cursor: pointer; transition: transform 0.2s ease, color 0.2s ease; }
+        .mobile-menu-toggle:hover { color: #E63946; transform: scale(1.1); }
+        .mobile-menu-toggle:active { transform: scale(0.95); }
+        
+        .text-center { text-align: center; }
+
+        /* Boutons */
+        .btn { display: inline-block; padding: 12px 25px; border-radius: 5px; text-decoration: none; font-weight: bold; transition: box-shadow 0.2s ease; cursor: pointer; border: none; box-shadow: 0 2px 4px rgba(0,0,0,0.2); color: #fff; animation: floating-animation 3s ease-in-out infinite; animation-delay: var(--animation-delay, 0s); position: relative; z-index: 1; }
+        .btn-primary { background-color: #E63946; }
+        .btn-primary:hover { box-shadow: 0 4px 8px rgba(0,0,0,0.3); animation-play-state: paused; }
+        .btn-primary:active { box-shadow: 0 2px 4px rgba(0,0,0,0.2); animation-play-state: paused; }
+        .btn-secondary { background-color: #333; color: #fff; border: 2px solid #E63946; }
+        .btn-secondary:hover { background-color: #E63946; color: #1a1a1a; box-shadow: 0 4px 8px rgba(230, 57, 70, 0.3); animation-play-state: paused; }
+        .btn-secondary:active { background-color: #c32a39; box-shadow: 0 2px 4px rgba(230, 57, 70, 0.2); animation-play-state: paused; }
+        .btn-rgb { position: relative; overflow: hidden; }
+        .btn-rgb::before { content: ''; position: absolute; top: -2px; left: -2px; right: -2px; bottom: -2px; background: linear-gradient(90deg, red, orange, yellow, green, blue, indigo, violet, red); background-size: 400% 400%; z-index: -1; animation: rgb-border-animation 8s linear infinite; border-radius: inherit; opacity: 0; transition: opacity 0.3s ease; }
+        .btn-rgb:hover::before { opacity: 1; }
+        @keyframes rgb-border-animation { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
+
+        section { padding: 40px 0; }
+        section h2 { text-align: center; font-size: 2.5rem; margin-bottom: 30px; }
+        
+        .form-container { background: #2c2c2c; padding: 30px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.2); max-width: 800px; margin: 20px auto; }
+        .form-group { margin-bottom: 20px; }
+        .form-group legend { font-size: 1.2rem; font-weight: bold; padding-bottom: 10px; margin-bottom: 20px; border-bottom: 1px solid #555; width: 100%; }
+        .form-group fieldset { border: 1px solid #444; padding: 20px; border-radius: 5px; margin-bottom: 25px; }
+        .form-group label { display: block; margin-bottom: 8px; color: #f0f0f0; font-weight: bold; }
+        .form-group input[type="text"], .form-group input[type="email"], .form-group input[type="tel"], .form-group input[type="password"], .form-group input[type="number"], .form-group input[type="date"], .form-group select, .form-group textarea { width: calc(100% - 22px); padding: 10px; border-radius: 5px; border: 1px solid #555; background-color: #3a3a3a; color: #f4f4f4; font-size: 1rem; }
+        .form-group input:focus, .form-group select:focus, .form-group textarea:focus { outline: none; border-color: #E63946; box-shadow: 0 0 5px rgba(230, 57, 70, 0.5); }
+        .form-group textarea { min-height: 100px; resize: vertical; }
+        .form-group small { display: block; margin-top: 5px; color: #bbb; font-size: 0.85em; } /* Style pour la note */
+        .checkbox-group, .radio-group { display: block; margin-bottom: 10px; }
+        .form-group .checkbox-group label, .form-group .radio-group label { font-weight: normal; color: #ccc; margin-left: 5px; cursor: pointer; }
+        .form-group .checkbox-group input[type="checkbox"], .form-group .radio-group input[type="radio"] { margin-right: 8px; accent-color: #E63946; vertical-align: middle; transform: scale(1.2); }
+        .btn-full-width { width: 100%; text-align: center; padding: 15px 25px; font-size: 1.1rem; }
+
+        /* Quote Preview Area */
+        #quotePreviewContainer {
+            margin-top: 40px;
+            padding: 20px;
+            background-color: #333; 
+            border-radius: 8px;
+        }
+        #quotePreviewDocument {
+            background-color: #ffffff !important; 
+            color: #000000 !important; 
+            padding: 30mm 20mm 20mm 20mm; 
+            border-radius: 0; 
+            box-shadow: none; 
+            max-width: 210mm; 
+            min-height: 280mm; 
+            margin: auto; 
+            font-family: 'Arial', sans-serif; 
+            font-size: 10pt; 
+            line-height: 1.4;
+        }
+        #quotePreviewDocument * { 
+             color: #000000 !important;
+             background-color: transparent !important; 
+        }
+        #quotePreviewDocument header, #quotePreviewDocument footer { text-align: center; margin-bottom: 15mm; }
+        #quotePreviewDocument .company-logo-placeholder { width: 120px; height: 60px; background-color: #f0f0f0 !important; margin: 0 auto 10px auto; display:flex; align-items:center; justify-content:center; font-size:9pt; color:#999 !important; border:1px dashed #bbb !important; }
+        #quotePreviewDocument h1, #quotePreviewDocument h2, #quotePreviewDocument h3 { margin-top:0; }
+        #quotePreviewDocument h1 { font-size: 20pt; text-align: right; margin-bottom: 15mm; color: #000000 !important; background: none !important; -webkit-text-fill-color: #000000 !important; } 
+        #quotePreviewDocument h2 { font-size: 14pt; color: #333333 !important; margin-bottom: 5mm;}
+        #quotePreviewDocument .quote-details, #quotePreviewDocument .client-details, #quotePreviewDocument .company-details { margin-bottom: 10mm; font-size:9pt; }
+        #quotePreviewDocument .company-details { text-align: left; }
+        #quotePreviewDocument .client-details { text-align: right; }
+        #quotePreviewDocument .quote-details p, #quotePreviewDocument .client-details p, #quotePreviewDocument .company-details p { margin: 2mm 0; }
+        #quotePreviewDocument table { width: 100%; border-collapse: collapse; margin-bottom: 10mm; font-size:9pt; }
+        #quotePreviewDocument th, #quotePreviewDocument td { border: 1px solid #888888 !important; padding: 2.5mm; text-align: left; }
+        #quotePreviewDocument th { background-color: #e0e0e0 !important; color: #000000 !important; font-weight: bold; }
+        #quotePreviewDocument .text-right { text-align: right; }
+        #quotePreviewDocument .totals { margin-top: 8mm; text-align: right; }
+        #quotePreviewDocument .totals p { margin: 2mm 0; font-size: 10pt; }
+        #quotePreviewDocument .totals p strong { font-size: 11pt; }
+        #quotePreviewDocument .terms, #quotePreviewDocument .cgv-preview, #quotePreviewDocument .legal-notes { margin-top: 10mm; font-size: 8pt; border-top: 1px solid #aaaaaa !important; padding-top: 5mm; text-align:justify; }
+        #quotePreviewDocument .cgv-preview h3, #quotePreviewDocument .legal-notes h3 { font-size: 10pt; color: #333333 !important; margin-bottom: 2mm; }
+        #quotePreviewDocument .cgv-preview pre, #quotePreviewDocument .legal-notes pre { white-space: pre-wrap; font-family: 'Arial', sans-serif; }
+        #quotePreviewDocument .signature-area { margin-top: 15mm; padding-top:8mm; border-top: 1px solid #888888 !important; display:flex; justify-content:space-between; }
+        #quotePreviewDocument .signature-box { width:45%; text-align:center; font-size:9pt; }
+        #quotePreviewDocument .signature-box p { margin-top:15mm; border-top:1px solid #333333 !important; padding-top:2mm; }
+
+
+        /* Footer */
+        footer { background: #111; color: #aaa; text-align: center; padding: 30px 0; border-top: 3px solid #E63946; }
+        .footer-contact-info { margin-top: 15px; font-size: 0.9rem; }
+        .footer-contact-info p { margin: 8px 0; }
+        .footer-contact-info a { text-decoration: none; }
+        .footer-contact-info a:hover { text-decoration: underline; }
+        footer p { margin: 5px 0; }
+        footer a { text-decoration: none; transition: color 0.2s ease; }
+        footer a:hover { text-decoration: underline; }
+        
+        /* Bannière Cookies */
+        .cookie-banner { position: fixed; bottom: 0; left: 0; width: 100%; background-color: #222; color: #f4f4f4; padding: 15px 20px; box-shadow: 0 -2px 10px rgba(0,0,0,0.3); z-index: 2000; display: none; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 15px; }
+        .cookie-banner p { margin: 0; flex-grow: 1; font-size: 0.9rem; }
+        .cookie-banner-buttons { display: flex; gap: 10px; }
+        .cookie-banner .btn { padding: 8px 15px; font-size: 0.9rem; animation: none; }
+
+        @media (max-width: 768px) {
+            .navbar .container { flex-direction: column; align-items: flex-start; }
+            .nav-links { flex-direction: column; width: 100%; display: none; max-height: 0; overflow: hidden; transition: max-height 0.5s ease-out; }
+            .nav-links.active { display: flex; max-height: 500px; }
+            .nav-links li { margin: 10px 0; width: 100%; text-align: center; }
+            .nav-links li a { display: block; padding: 10px; }
+            .dropdown-content { position: static; box-shadow: none; background-color: rgba(255,255,255,0.05); padding-left: 20px; display: none; opacity: 1; transform: translateY(0); }
+            .dropdown .dropdown-content.show-mobile { display: block; }
+            .dropdown:hover .dropdown-content { display: none; opacity: 0; transform: translateY(10px); }
+            .dropdown:hover .dropdown-content.show-mobile { display: block; opacity: 1; transform: translateY(0); }
+            .dropdown-content a { padding: 10px 15px; color: #f4f4f4; }
+            .dropdown-content a:hover { background-color: #E63946; color: #1a1a1a; }
+            .mobile-menu-toggle { display: block; position: absolute; top: 20px; right: 20px; }
+            .form-container { padding: 20px; }
+            .form-group fieldset { padding: 15px; }
+            .form-group legend { font-size: 1.1rem; }
+            #quotePreviewDocument { padding: 10mm; min-height: auto; font-size:9pt; } 
+            #quotePreviewDocument h1 { font-size: 14pt; }
+            .cookie-banner { flex-direction: column; text-align: center; }
+            .cookie-banner-buttons { width: 100%; justify-content: center; }
+        }
+         @media print { 
+            body, html { background-color: #ffffff !important; color: #000000 !important; font-size: 10pt !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important;}
+            header, footer, .cookie-banner, #quoteForm, #downloadPdfButton, .devis-form-section > .container > p.text-center, 
+            .devis-form-section > .container > h2.text-rgb-gradient, #quotePreviewContainer > h3 
+            { display: none !important; }
+            
+            #appContent { display: block !important; } 
+            #quotePreviewContainer { margin: 0 !important; padding: 0 !important; background-color: #ffffff !important; border-radius:0 !important; box-shadow:none !important; }
+            #quotePreviewDocument { 
+                max-width: 100% !important; 
+                min-height:auto !important; 
+                margin: 0 !important; 
+                padding: 10mm !important; 
+                border-radius:0 !important; 
+                box-shadow:none !important; 
+                border:none !important; 
+                background-color: #ffffff !important; 
+                color: #000000 !important;
+            }
+            #quotePreviewDocument * {
+                color: #000000 !important;
+                background-color: transparent !important;
+                box-shadow: none !important;
+                text-shadow: none !important;
+            }
+            .text-rgb-gradient { 
+                background: none !important; 
+                -webkit-text-fill-color: #000000 !important; 
+                text-fill-color: #000000 !important; 
+                color: #000000 !important; 
+            }
+            #quotePreviewDocument h1 { color: #000000 !important; background: none !important; -webkit-text-fill-color: #000000 !important; }
+            #quotePreviewDocument h2, #quotePreviewDocument h3 { color: #333333 !important; background: none !important; -webkit-text-fill-color: #333333 !important; }
+            #quotePreviewDocument th { background-color: #e0e0e0 !important; color: #000000 !important; }
+            #quotePreviewDocument td, #quotePreviewDocument th { border: 1px solid #888888 !important; }
+            .btn { display:none !important; } 
+            #quotePreviewDocument .company-logo-placeholder { background-color: #f0f0f0 !important; color:#999 !important; border:1px dashed #bbb !important; }
+            #quotePreviewDocument .terms, #quotePreviewDocument .cgv-preview, #quotePreviewDocument .legal-notes, #quotePreviewDocument table { page-break-inside: auto; }
+            #quotePreviewDocument tr, #quotePreviewDocument td { page-break-inside: avoid; page-break-after: auto; }
+            #quotePreviewDocument footer { page-break-before: auto; }
+
+        }
+
+    </style>
+</head>
+<body>
+    <div id="appContent"> <header>
+            <nav class="navbar">
+                <div class="container">
+                    <a href="index.html" class="logo text-rgb-gradient">clfmweb</a>
+                    <ul class="nav-links">
+                        <li><a href="index.html">Accueil</a></li>
+                        <li class="dropdown">
+                            <a href="#" class="dropbtn">Nos Services ▼</a> 
+                            <div class="dropdown-content">
+                                <a href="service-vitrine.html">Site Vitrine</a>
+                                <a href="service-dynamique.html">Site Dynamique</a>
+                                <a href="service-ecommerce.html">Site E-commerce</a>
+                                <a href="service-refonte.html">Refonte de Site</a>
+                            </div>
+                        </li>
+                        <li><a href="portfolio.html">Portfolio</a></li>
+                        <li><a href="devis.html" class="active">Générer un Devis</a></li>
+                        <li><a href="contact.html">Contact</a></li>
+                    </ul>
+                    <button class="mobile-menu-toggle" aria-label="Ouvrir le menu">☰</button>
+                </div>
+            </nav>
+        </header>
+
+        <main>
+            <section class="devis-form-section">
+                <div class="container">
+                    <h2 class="text-rgb-gradient">Générateur de Devis pour Vos Clients</h2>
+                    <p class="text-center" style="margin-bottom: 30px; font-size: 1.1rem;">Remplissez les informations ci-dessous pour créer un devis personnalisé pour votre client.</p>
+                    
+                    <form id="quoteForm" class="form-container">
+                        <fieldset>
+                            <legend class="text-rgb-gradient">Vos Informations (clfmweb)</legend>
+                            <div class="form-group"> <label for="yourName">Votre Nom / Nom de l'entreprise :</label> <input type="text" id="yourName" name="yourName" value="clfmweb" required> </div>
+                            <div class="form-group"> <label for="yourAddress">Votre Adresse :</label> <input type="text" id="yourAddress" name="yourAddress" value="18 boulevard Berthelot" required> </div>
+                            <div class="form-group"> <label for="yourCityZip">Votre Ville, Code Postal :</label> <input type="text" id="yourCityZip" name="yourCityZip" value="ANGOULEME, 16000" required> </div>
+                            <div class="form-group"> <label for="yourEmail">Votre Email :</label> <input type="email" id="yourEmail" name="yourEmail" value="clfmweb@gmail.com" required> </div>
+                            <div class="form-group"> <label for="yourPhone">Votre Téléphone :</label> <input type="tel" id="yourPhone" name="yourPhone" value="07 66 00 76 86"> </div>
+                            <div class="form-group"> <label for="yourSiret">Votre N° SIRET (optionnel) :</label> <input type="text" id="yourSiret" name="yourSiret" placeholder="Ex: 123 456 789 00010"> </div>
+                            <div class="form-group"> <label for="yourLogoUrl">URL de votre Logo (optionnel, pour le devis) :</label> <input type="text" id="yourLogoUrl" name="yourLogoUrl" placeholder="https://example.com/logo.png"> </div>
+                        </fieldset>
+
+                        <fieldset>
+                            <legend class="text-rgb-gradient">Informations du Client</legend>
+                            <div class="form-group"> <label for="clientName">Nom du Client / Nom de l'entreprise :</label> <input type="text" id="clientName" name="clientName" required placeholder="Nom du client"> </div>
+                            <div class="form-group"> <label for="clientAddress">Adresse du Client :</label> <input type="text" id="clientAddress" name="clientAddress" placeholder="Adresse complète"> </div>
+                            <div class="form-group"> <label for="clientCityZip">Ville, Code Postal du Client :</label> <input type="text" id="clientCityZip" name="clientCityZip" placeholder="VILLE, 00000"> </div>
+                            <div class="form-group"> <label for="clientEmail">Email du Client :</label> <input type="email" id="clientEmail" name="clientEmail" placeholder="email@client.com"> </div>
+                        </fieldset>
+
+                         <fieldset>
+                            <legend class="text-rgb-gradient">Détails du Devis</legend>
+                            <div class="form-group"> <label for="quoteNumber">Numéro du Devis :</label> <input type="text" id="quoteNumber" name="quoteNumber" required placeholder="Ex: DEV2024-001"> </div>
+                            <div class="form-group"> <label for="quoteDate">Date d'émission :</label> <input type="date" id="quoteDate" name="quoteDate" required> </div>
+                            <div class="form-group"> <label for="quoteValidity">Date de validité :</label> <input type="date" id="quoteValidity" name="quoteValidity" required> </div>
+                        </fieldset>
+
+                        <fieldset>
+                            <legend class="text-rgb-gradient">Prestations et Services</legend>
+                            <div class="form-group"> <label for="serviceType">Type de site principal :</label> <select id="serviceType" name="serviceType"> <option value="">-- Aucun --</option> <option value="vitrine" data-price="400">Site Vitrine</option> <option value="dynamique" data-price="700">Site Dynamique</option> <option value="ecommerce" data-price="1500">Site E-commerce</option> <option value="refonte" data-price="350">Refonte de site</option> <option value="landing" data-price="250">Landing Page</option> </select> </div>
+                            <div class="form-group"> <label for="numPages">Nombre de pages (si applicable) :</label> <input type="number" id="numPages" name="numPages" min="0" value="0" data-price-per-page="70"> </div>
+                            <p style="font-weight:bold; margin-bottom:10px;">Fonctionnalités additionnelles :</p>
+                            <div class="checkbox-group"> <input type="checkbox" id="logoCreation" data-price="150"> <label for="logoCreation">Création Logo</label> </div>
+                            <div class="checkbox-group"> <input type="checkbox" id="charteGraphique" data-price="250"> <label for="charteGraphique">Charte Graphique</label> </div>
+                            <div class="checkbox-group"> <input type="checkbox" id="designPersonnalise" data-price="400"> <label for="designPersonnalise">Design Sur Mesure</label> </div>
+                            <div class="checkbox-group"> <input type="checkbox" id="contenuRedaction" data-price="150"> <label for="contenuRedaction">Aide Rédaction Contenu</label> </div>
+                            <div class="checkbox-group"> <input type="checkbox" id="blogIntegration" data-price="250"> <label for="blogIntegration">Blog/Actualités</label> </div>
+                            <div class="checkbox-group"> <input type="checkbox" id="ecommerceFonction" data-price="700"> <label for="ecommerceFonction">Fonctionnalités E-commerce (ajout)</label> </div>
+                            <div class="checkbox-group"> <input type="checkbox" id="formulaireComplexe" data-price="180"> <label for="formulaireComplexe">Formulaire(s) Avancé(s)</label> </div>
+                            <div class="checkbox-group"> <input type="checkbox" id="espaceMembre" data-price="450"> <label for="espaceMembre">Espace Membre</label> </div>
+                            <div class="checkbox-group"> <input type="checkbox" id="multilingue" data-price="300"> <label for="multilingue">Site Multilingue</label> </div>
+                            <div class="checkbox-group"> <input type="checkbox" id="seoAvance" data-price="280"> <label for="seoAvance">SEO Avancé</label> </div>
+                            <div class="checkbox-group"> <input type="checkbox" id="maintenancePack" data-price="50"> <label for="maintenancePack">Pack Maintenance (mensuel)</label> </div>
+                            <div class="form-group" style="margin-top:20px;"> <label for="customItems">Autres prestations (une par ligne : Description;Quantité;Prix Unitaire HT) :</label> <textarea id="customItems" name="customItems" rows="4" placeholder="Ex: Hébergement Annuel;1;120&#10;Nom de domaine;1;15"></textarea> </div>
+                        </fieldset>
+
+                        <fieldset>
+                            <legend class="text-rgb-gradient">Conditions et Totaux</legend>
+                            <div class="form-group"> 
+                                <label for="manualSubtotal">Montant Total HT Manuel (optionnel) :</label> 
+                                <input type="number" id="manualSubtotal" name="manualSubtotal" min="0" step="0.01" placeholder="Laisser vide pour calcul auto"> 
+                                <small>Si renseigné, ce montant remplace le calcul détaillé des prestations.</small>
+                            </div>
+                            <div class="form-group"> <label for="vatRate">Taux de TVA applicable (%) :</label> <input type="number" id="vatRate" name="vatRate" value="0" min="0" step="0.1" placeholder="Ex: 20 pour 20% (0 si non applicable)"> </div>
+                            <div class="form-group"> <label for="paymentTerms">Conditions de paiement :</label> <textarea id="paymentTerms" name="paymentTerms" rows="3">Acompte de 30% à la commande, solde à la livraison. Paiement par virement bancaire.</textarea> </div>
+                            <div class="form-group"> <label for="quoteNotes">Notes additionnelles pour le client (sur le devis) :</label> <textarea id="quoteNotes" name="quoteNotes" rows="3" placeholder="Ex: Ce devis est valable 30 jours..."></textarea> </div>
+                            <div class="form-group"> <label for="cgv">Conditions Générales de Vente (apparaîtront sur le devis) :</label> <textarea id="cgv" name="cgv" rows="5" placeholder="Collez vos CGV ici..."></textarea> </div>
+                            <div class="form-group"> <label for="legalObligations">Mentions Légales et Contractuelles (apparaîtront sur le devis) :</label> <textarea id="legalObligations" name="legalObligations" rows="4">Le présent devis constitue une proposition de contrat. L'acceptation de ce devis par le client, matérialisée par sa signature, vaut conclusion du contrat et implique l'adhésion pleine et entière aux conditions générales de vente ci-jointes (le cas échéant) et aux prestations décrites. Les deux parties s'engagent à respecter leurs obligations contractuelles respectives. Conformément à la loi, vous disposez d'un droit de rétractation (si applicable). Pour plus d'informations sur vos droits et obligations, vous pouvez consulter le site service-public.fr.</textarea> </div>
+                        </fieldset>
+
+                        <button type="submit" class="btn btn-primary btn-rgb btn-full-width" style="--animation-delay: 0.1s;">Prévisualiser le Devis</button>
+                    </form>
+
+                    <div id="quotePreviewContainer" style="display:none;">
+                        <h3 class="text-rgb-gradient text-center" style="margin-bottom:20px;">Aperçu du Devis</h3>
+                        <div id="quotePreviewDocument">
+                            </div>
+                        <button id="downloadPdfButton" class="btn btn-secondary btn-rgb" style="margin-top: 20px; display: block; margin-left:auto; margin-right:auto; --animation-delay: 0.3s;">Télécharger en PDF</button>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <footer>
+            <div class="container">
+                <p>&copy; <span id="currentYear"></span> clfmweb - Tous droits réservés. Auto-entrepreneur.</p>
+                <p><a href="mentions-legales.html" class="text-rgb-gradient">Mentions Légales</a></p>
+                <div class="footer-contact-info">
+                    <p>Email : <a href="mailto:clfmweb@gmail.com" class="text-rgb-gradient">clfmweb@gmail.com</a></p>
+                    <p>Téléphone : <a href="tel:0766007686" class="text-rgb-gradient">07 66 00 76 86</a></p>
+                    <p>Adresse : 18 boulevard Berthelot</p> 
+                </div>
+            </div>
+        </footer>
+
+        <div class="cookie-banner" id="cookieBanner">
+            <p>Ce site utilise des cookies pour améliorer votre expérience...</p>
+            <div class="cookie-banner-buttons">
+                <button class="btn btn-primary" id="acceptCookies">Accepter</button>
+                <button class="btn btn-secondary" id="declineCookies">Refuser</button>
+            </div>
+        </div>
+    </div> <script>
+        // jsPDF global
+        const { jsPDF } = window.jspdf;
+        // const CORRECT_PASSWORD = "Maison-1"; // Mot de passe enlevé
+
+        document.addEventListener('DOMContentLoaded', function () {
+            // Plus de vérification de mot de passe ici
+            // On appelle directement initializePageFunctions
+            initializePageFunctions();
+            
+            function initializePageFunctions() {
+                // --- Menu Mobile, Année, Animations RGB (identique à index.html) ---
+                const mobileMenuToggle = document.querySelector('.mobile-menu-toggle');
+                const navLinks = document.querySelector('.nav-links');
+                const dropdowns = document.querySelectorAll('.nav-links .dropdown');
+                if (mobileMenuToggle && navLinks) { 
+                    mobileMenuToggle.addEventListener('click', function () {
+                        navLinks.classList.toggle('active');
+                        mobileMenuToggle.innerHTML = navLinks.classList.contains('active') ? '✕' : '☰';
+                        if (!navLinks.classList.contains('active')) {
+                            dropdowns.forEach(dropdown => {
+                                dropdown.querySelector('.dropdown-content').classList.remove('show-mobile');
+                            });
+                        }
+                    });
+                }
+                dropdowns.forEach(dropdown => { 
+                    const dropbtn = dropdown.querySelector('.dropbtn');
+                    const dropdownContent = dropdown.querySelector('.dropdown-content');
+                    if (dropbtn && dropdownContent) {
+                        dropbtn.addEventListener('click', function(event) {
+                            if (window.getComputedStyle(mobileMenuToggle).display !== 'none' && navLinks.classList.contains('active')) {
+                                event.preventDefault(); 
+                                dropdowns.forEach(otherDropdown => {
+                                    if (otherDropdown !== dropdown) {
+                                        otherDropdown.querySelector('.dropdown-content').classList.remove('show-mobile');
+                                    }
+                                });
+                                dropdownContent.classList.toggle('show-mobile');
+                            }
+                        });
+                    }
+                });
+                const yearSpan = document.getElementById('currentYear');
+                if (yearSpan) yearSpan.textContent = new Date().getFullYear();
+                const rgbButtons = document.querySelectorAll('.btn-rgb');
+                let hueButtons = 0; 
+                setInterval(() => { 
+                    hueButtons = (hueButtons + 1) % 360;
+                    const colorButtons = `hsl(${hueButtons}, 80%, 55%)`; 
+                    rgbButtons.forEach(button => { button.style.backgroundColor = colorButtons; });
+                }, 50);
+                const textRgbElements = document.querySelectorAll('.text-rgb-gradient');
+                let hueText = 0;
+                const saturationText = 70, lightnessText = 60, fixedStartColorText = '#1a1a1a'; 
+                setInterval(() => { 
+                    hueText = (hueText + 1) % 360;
+                    const colorText1 = `hsl(${hueText}, ${saturationText}%, ${lightnessText}%)`;
+                    const colorText2 = `hsl(${(hueText + 120) % 360}, ${saturationText}%, ${lightnessText}%)`; 
+                    textRgbElements.forEach(element => { element.style.backgroundImage = `linear-gradient(90deg, ${fixedStartColorText} 0%, ${colorText1} 50%, ${colorText2} 100%)`; });
+                }, 30); 
+                
+                const cookieBanner = document.getElementById('cookieBanner');
+                const acceptCookiesButton = document.getElementById('acceptCookies');
+                const declineCookiesButton = document.getElementById('declineCookies');
+                const cookieConsent = localStorage.getItem('cookieConsentClfmweb');
+                if (!cookieConsent && cookieBanner) cookieBanner.style.display = 'flex'; 
+                if (acceptCookiesButton) acceptCookiesButton.addEventListener('click', function() { localStorage.setItem('cookieConsentClfmweb', 'accepted'); if (cookieBanner) cookieBanner.style.display = 'none'; });
+                if (declineCookiesButton) declineCookiesButton.addEventListener('click', function() { localStorage.setItem('cookieConsentClfmweb', 'declined'); if (cookieBanner) cookieBanner.style.display = 'none'; });
+                // --- Fin Logique Commune ---
+
+                const quoteForm = document.getElementById('quoteForm');
+                const quotePreviewContainer = document.getElementById('quotePreviewContainer');
+                const quotePreviewDocument = document.getElementById('quotePreviewDocument');
+                const downloadPdfButton = document.getElementById('downloadPdfButton');
+
+                const today = new Date().toISOString().split('T')[0];
+                const quoteDateInput = document.getElementById('quoteDate');
+                if(quoteDateInput) quoteDateInput.value = today;
+                const quoteValidityInput = document.getElementById('quoteValidity');
+                if(quoteValidityInput) {
+                    const validityDate = new Date();
+                    validityDate.setDate(validityDate.getDate() + 30); 
+                    quoteValidityInput.value = validityDate.toISOString().split('T')[0];
+                }
+
+                if (quoteForm) {
+                    quoteForm.addEventListener('submit', function(event) {
+                        event.preventDefault();
+                        generateAndDisplayQuotePreview();
+                    });
+                }
+
+                if (downloadPdfButton) {
+                    downloadPdfButton.addEventListener('click', function() {
+                        generatePdf();
+                    });
+                }
+            } // Fin de initializePageFunctions
+
+            function generateAndDisplayQuotePreview() {
+                const data = {
+                    yourName: document.getElementById('yourName').value,
+                    yourAddress: document.getElementById('yourAddress').value,
+                    yourCityZip: document.getElementById('yourCityZip').value,
+                    yourEmail: document.getElementById('yourEmail').value,
+                    yourPhone: document.getElementById('yourPhone').value,
+                    yourSiret: document.getElementById('yourSiret').value,
+                    yourLogoUrl: document.getElementById('yourLogoUrl').value,
+
+                    clientName: document.getElementById('clientName').value,
+                    clientAddress: document.getElementById('clientAddress').value,
+                    clientCityZip: document.getElementById('clientCityZip').value,
+                    clientEmail: document.getElementById('clientEmail').value,
+                    
+                    quoteNumber: document.getElementById('quoteNumber').value,
+                    quoteDate: new Date(document.getElementById('quoteDate').value).toLocaleDateString('fr-FR'),
+                    quoteValidity: new Date(document.getElementById('quoteValidity').value).toLocaleDateString('fr-FR'),
+
+                    paymentTerms: document.getElementById('paymentTerms').value.replace(/\n/g, '<br>'),
+                    quoteNotes: document.getElementById('quoteNotes').value.replace(/\n/g, '<br>'),
+                    cgv: document.getElementById('cgv').value.replace(/\n/g, '<br>'), // CGV récupérées
+                    legalObligations: document.getElementById('legalObligations').value.replace(/\n/g, '<br>'), // Mentions légales récupérées
+                    
+                    manualSubtotal: parseFloat(document.getElementById('manualSubtotal').value) || null,
+                    vatRate: parseFloat(document.getElementById('vatRate').value) || 0,
+                    items: []
+                };
+
+                let subTotal = 0;
+
+                if (data.manualSubtotal !== null && !isNaN(data.manualSubtotal) && data.manualSubtotal >= 0) { // Vérifier que c'est un nombre positif ou nul
+                    subTotal = data.manualSubtotal;
+                    data.items.push({ description: "Montant Forfaitaire HT Personnalisé", quantity: 1, unitPrice: subTotal, total: subTotal });
+                } else {
+                    const serviceTypeElement = document.getElementById('serviceType');
+                    const selectedServiceOption = serviceTypeElement.options[serviceTypeElement.selectedIndex];
+                    if (selectedServiceOption && selectedServiceOption.value) {
+                        const price = parseFloat(selectedServiceOption.dataset.price) || 0;
+                        data.items.push({ description: `Prestation principale : ${selectedServiceOption.text}`, quantity: 1, unitPrice: price, total: price });
+                        subTotal += price;
+                    }
+                    
+                    const numPages = parseInt(document.getElementById('numPages').value) || 0;
+                    const pricePerPage = parseFloat(document.getElementById('numPages').dataset.pricePerPage) || 0;
+                    if (numPages > 0 && pricePerPage > 0 && serviceTypeElement.value && serviceTypeElement.value !== 'landing') {
+                        let basePages = 0; 
+                        if(serviceTypeElement.value === 'vitrine') basePages = 3;
+                        if(serviceTypeElement.value === 'dynamique') basePages = 5;
+                        if(serviceTypeElement.value === 'ecommerce') basePages = 7;
+                        const additionalPages = Math.max(0, numPages - basePages);
+                        if (additionalPages > 0) {
+                            const pagesPrice = additionalPages * pricePerPage;
+                            data.items.push({ description: `Pages additionnelles (${additionalPages} x ${pricePerPage.toFixed(2)}€)`, quantity: additionalPages, unitPrice: pricePerPage, total: pagesPrice });
+                            subTotal += pagesPrice;
+                        }
+                    }
+
+                    const checkboxes = quoteForm.querySelectorAll('input[type="checkbox"][data-price]');
+                    checkboxes.forEach(cb => {
+                        if (cb.checked) {
+                            const price = parseFloat(cb.dataset.price) || 0;
+                            const label = cb.parentElement.querySelector('label').textContent;
+                            data.items.push({ description: label, quantity: 1, unitPrice: price, total: price });
+                            subTotal += price;
+                        }
+                    });
+
+                    const customItemsText = document.getElementById('customItems').value.trim();
+                    if (customItemsText) {
+                        const lines = customItemsText.split('\n');
+                        lines.forEach(line => {
+                            const trimmedLine = line.trim();
+                            if (trimmedLine) { 
+                                const parts = trimmedLine.split(';');
+                                if (parts.length >= 3) {
+                                    const description = parts[0].trim();
+                                    let quantity = parseInt(parts[1].trim());
+                                    let unitPrice = parseFloat(parts[2].trim());
+
+                                    if (description && !isNaN(quantity) && quantity > 0 && !isNaN(unitPrice) && unitPrice >= 0) { // quantity > 0 and unitPrice >=0
+                                        const total = quantity * unitPrice;
+                                        data.items.push({ description, quantity, unitPrice, total });
+                                        subTotal += total;
+                                        console.log('Added custom item:', { description, quantity, unitPrice, total });
+                                    } else {
+                                        console.warn('Skipped invalid custom item line (check description, quantity > 0, or price >= 0):', trimmedLine, 'Parsed parts:', {description, quantity, unitPrice});
+                                    }
+                                } else {
+                                     console.warn('Skipped custom item line due to insufficient parts (expected 3 parts separated by ";"):', trimmedLine);
+                                }
+                            }
+                        });
+                    }
+                }
+                
+                data.subTotal = subTotal;
+                data.vatAmount = (subTotal * data.vatRate) / 100;
+                data.grandTotal = subTotal + data.vatAmount;
+
+                let itemsHtml = '';
+                data.items.forEach(item => {
+                    itemsHtml += `
+                        <tr>
+                            <td>${item.description}</td>
+                            <td class="text-right">${item.quantity}</td>
+                            <td class="text-right">${item.unitPrice.toFixed(2)} €</td>
+                            <td class="text-right">${item.total.toFixed(2)} €</td>
+                        </tr>
+                    `;
+                });
+
+                quotePreviewDocument.innerHTML = `
+                    <header>
+                        ${data.yourLogoUrl ? `<img src="${data.yourLogoUrl}" alt="Logo" style="max-height: 70px; margin-bottom:10mm;">` : '<div class="company-logo-placeholder">Votre Logo Ici</div>'}
+                        <h2>${data.yourName}</h2>
+                        <p>${data.yourAddress}<br>${data.yourCityZip}</p>
+                        <p>Email: ${data.yourEmail} | Tél: ${data.yourPhone}</p>
+                        ${data.yourSiret ? `<p>SIRET: ${data.yourSiret}</p>` : ''}
+                    </header>
+                    
+                    <h1>DEVIS</h1>
+
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 10mm;">
+                        <div class="company-details" style="width:50%;">
+                            </div>
+                        <div class="client-details" style="width:45%;">
+                            <strong>Client :</strong><br>
+                            ${data.clientName}<br>
+                            ${data.clientAddress || ''}<br>
+                            ${data.clientCityZip || ''}<br>
+                            ${data.clientEmail || ''}
+                        </div>
+                    </div>
+
+                    <div class="quote-details">
+                        <p><strong>Numéro de Devis :</strong> ${data.quoteNumber}</p>
+                        <p><strong>Date d'émission :</strong> ${data.quoteDate}</p>
+                        <p><strong>Valable jusqu'au :</strong> ${data.quoteValidity}</p>
+                    </div>
+
+                    <table>
+                        <thead> <tr> <th>Description</th> <th class="text-right">Qté</th> <th class="text-right">Prix Unitaire HT</th> <th class="text-right">Total HT</th> </tr> </thead>
+                        <tbody> ${itemsHtml} </tbody>
+                    </table>
+
+                    <div class="totals">
+                        <p>Sous-Total HT : <strong>${data.subTotal.toFixed(2)} €</strong></p>
+                        <p>TVA (${data.vatRate}%) : <strong>${data.vatAmount.toFixed(2)} €</strong></p>
+                        <p><strong>TOTAL TTC :</strong> <strong style="font-size:12pt;">${data.grandTotal.toFixed(2)} €</strong></p>
+                    </div>
+
+                    ${data.paymentTerms ? `<div class="terms"><strong>Conditions de paiement :</strong><br>${data.paymentTerms}</div>` : ''}
+                    ${data.quoteNotes ? `<div class="terms" style="margin-top:5mm;"><strong>Notes :</strong><br>${data.quoteNotes}</div>` : ''}
+                    ${data.legalObligations ? `<div class="legal-notes" style="margin-top:5mm;"><h3>Mentions Légales et Contractuelles</h3><pre>${data.legalObligations}</pre></div>` : ''}
+                    ${data.cgv ? `<div class="cgv-preview" style="margin-top:5mm; page-break-before: auto;"><h3>Conditions Générales de Vente</h3><pre>${data.cgv}</pre></div>` : ''}
+                    
+                    <footer>
+                        <div class="signature-area">
+                            <div class="signature-box"> Pour ${data.yourName}<br> (Votre Signature) <p>Cachet et Signature</p> </div>
+                            <div class="signature-box"> Pour le Client<br> (Bon pour accord) <p>Date, Cachet et Signature</p> </div>
+                        </div>
+                        <p style="font-size:8pt; margin-top:10mm; text-align:center;">Merci de votre confiance.</p>
+                    </footer>
+                `;
+
+                if(quotePreviewContainer) quotePreviewContainer.style.display = 'block';
+                if(downloadPdfButton) downloadPdfButton.style.display = 'block';
+                quotePreviewDocument.scrollIntoView({ behavior: 'smooth' });
+            }
+
+            function generatePdf() {
+                const quoteDocument = document.getElementById('quotePreviewDocument');
+                const quoteNumber = document.getElementById('quoteNumber').value || 'devis';
+                const clientName = document.getElementById('clientName').value.replace(/[^a-z0-9]/gi, '_').toLowerCase() || 'client';
+
+                // Temporairement appliquer des styles pour le rendu PDF via html2canvas
+                const originalStyles = {
+                    backgroundColor: quoteDocument.style.backgroundColor,
+                    color: quoteDocument.style.color,
+                };
+                // Forcer le fond blanc et texte noir pour la capture
+                quoteDocument.style.backgroundColor = '#ffffff';
+                quoteDocument.style.color = '#000000';
+                
+                const elementsToStyle = quoteDocument.querySelectorAll('*');
+                elementsToStyle.forEach(el => {
+                    el.style.setProperty('color', '#000000', 'important');
+                    el.style.setProperty('background-color', 'transparent', 'important');
+                     // Enlever les ombres pour le PDF
+                    el.style.setProperty('text-shadow', 'none', 'important');
+                    el.style.setProperty('box-shadow', 'none', 'important');
+                });
+                const h1Devis = quoteDocument.querySelector('h1');
+                if(h1Devis) {
+                    h1Devis.style.setProperty('color', '#000000', 'important');
+                    h1Devis.style.setProperty('background', 'none', 'important');
+                    h1Devis.style.setProperty('-webkit-text-fill-color', '#000000', 'important');
+                }
+
+
+                html2canvas(quoteDocument, {
+                    scale: 2.5, 
+                    useCORS: true, 
+                    logging: true, 
+                    backgroundColor: '#ffffff', // Forcer le fond blanc pour la capture
+                    onclone: (clonedDoc) => {
+                        // Appliquer les styles @media print au document cloné
+                        const style = clonedDoc.createElement('style');
+                        style.innerHTML = `
+                            @media print {
+                                body, html { background-color: #ffffff !important; color: #000000 !important; font-size: 10pt !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important;}
+                                #quotePreviewDocument { background-color: #ffffff !important; color: #000000 !important; }
+                                #quotePreviewDocument * { color: #000000 !important; background-color: transparent !important; box-shadow: none !important; text-shadow: none !important; }
+                                .text-rgb-gradient { background: none !important; -webkit-text-fill-color: #000000 !important; text-fill-color: #000000 !important; color: #000000 !important; }
+                                #quotePreviewDocument h1 { color: #000000 !important; background: none !important; -webkit-text-fill-color: #000000 !important; }
+                                #quotePreviewDocument h2, #quotePreviewDocument h3 { color: #333333 !important; background: none !important; -webkit-text-fill-color: #333333 !important; }
+                                #quotePreviewDocument th { background-color: #e0e0e0 !important; color: #000000 !important; }
+                                #quotePreviewDocument td, #quotePreviewDocument th { border: 1px solid #888888 !important; }
+                            }
+                        `;
+                        clonedDoc.head.appendChild(style);
+                    }
+                }).then(canvas => {
+                    // Rétablir les styles originaux après la capture
+                    quoteDocument.style.backgroundColor = originalStyles.backgroundColor;
+                    quoteDocument.style.color = originalStyles.color;
+                     elementsToStyle.forEach(el => {
+                        el.style.removeProperty('color');
+                        el.style.removeProperty('background-color');
+                        el.style.removeProperty('text-shadow');
+                        el.style.removeProperty('box-shadow');
+                    });
+                    if(h1Devis) {
+                        h1Devis.style.removeProperty('color');
+                        h1Devis.style.removeProperty('background');
+                        h1Devis.style.removeProperty('-webkit-text-fill-color');
+                    }
+
+
+                    const imgData = canvas.toDataURL('image/png');
+                    const pdf = new jsPDF({ orientation: 'p', unit: 'mm', format: 'a4' });
+                    const pdfWidth = pdf.internal.pageSize.getWidth();
+                    const pdfHeight = pdf.internal.pageSize.getHeight();
+                    
+                    const canvasAspectRatio = canvas.width / canvas.height;
+                    
+                    let imgFinalWidth = pdfWidth - 20; // 10mm margin on each side
+                    let imgFinalHeight = imgFinalWidth / canvasAspectRatio;
+
+                    if (imgFinalHeight > pdfHeight - 20) { // 10mm margin top/bottom
+                        imgFinalHeight = pdfHeight - 20;
+                        imgFinalWidth = imgFinalHeight * canvasAspectRatio;
+                    }
+                    
+                    const x = (pdfWidth - imgFinalWidth) / 2;
+                    const y = 10;
+
+                    pdf.addImage(imgData, 'PNG', x, y, imgFinalWidth, imgFinalHeight);
+                    pdf.save(`Devis_${quoteNumber}_${clientName}.pdf`);
+                }).catch(error => {
+                    console.error("Erreur lors de la génération du PDF : ", error);
+                    alert("Une erreur est survenue lors de la génération du PDF. Vérifiez la console pour plus de détails.");
+                });
+            }
+
+        }); // Fin DOMContentLoaded
+    </script>
+</body>
+</html>
